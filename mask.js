@@ -2,8 +2,8 @@ console.log("sup from inde.js")
 
 const canvas = new fabric.Canvas('canvas', {
 
-  width: 2000,
-  height: 2000,
+  width: 1000,
+  height: 1000,
   backgroundColor: 'white',
   selection: 0
 });
@@ -76,28 +76,11 @@ function formCircleFromCoords(lineArray){
   return circleArray;
 }
 
-const coords = [[342, 432], [336, 438], [336, 473], [348, 485], [371,485], [371, 444], [359, 432]]
 
-// var line = makeLine([342, 432, 336, 438], 1),
-//   line2 = makeLine([336, 438, 336, 473], 2),
-//   line3 = makeLine([336, 473, 348, 485], 3),
-//   line4 = makeLine([348, 485, 371, 485], 4),
-//   line5 = makeLine([371, 485, 371, 444], 5),
-//   line6 = makeLine([371, 444, 359, 432], 6),
-//   line7 = makeLine([359, 432, 342, 432], 7);
-// canvas.add(line, line2, line3, line4, line5, line6, line7);
+const coords = [[342, 432], [336, 438], [336, 473], [348, 485], [371,485], [371, 444], [359, 432]]
 
 const lineArray = formLineFromCoords(coords);
 console.log(lineArray);
-
-// var circle = makeCircle(line.get('x2'), line.get('y2'), line, line2, "yellow", 1),
-//   circle2 = makeCircle(line2.get('x2'), line2.get('y2'), line2, line3, "red", 2),
-//   circle3 = makeCircle(line3.get('x2'), line3.get('y2'), line3, line4, "pink", 3),
-//   circle4 = makeCircle(line4.get('x2'), line4.get('y2'), line4, line5, "purple",4),
-//   circle5 = makeCircle(line5.get('x2'), line5.get('y2'), line5, line6, "cyan",5),
-//   circle6 = makeCircle(line6.get('x2'), line6.get('y2'), line6, line7, "orange",6),
-//   circle7 = makeCircle(line7.get('x2'), line7.get('y2'), line7, line, "brown",7);
-// canvas.add(circle, circle2, circle3, circle4, circle5, circle6, circle7);
 
 const circleArray = formCircleFromCoords(lineArray);
 
@@ -106,7 +89,7 @@ console.log(Object.keys(objects))
 
 canvas.on('object:moving', function (e) {
   var p = e.target;
-  console.log(p.id);
+  // console.log(p.id);
   p.line1 && p.line1.set({ 'x2': p.left, 'y2': p.top });
   p.line2 && p.line2.set({ 'x1': p.left, 'y1': p.top });
   p.line1.setCoords();
@@ -118,7 +101,7 @@ canvas.on('object:moving', function (e) {
 //double click to add a point
 canvas.on('mouse:dblclick', function (e) {
   var obj = e.target;
-  console.log(`OBJ ID:${obj.id}`);
+
   var pointer = canvas.getPointer(e);
 
   if (e.target) {
@@ -130,7 +113,6 @@ canvas.on('mouse:dblclick', function (e) {
       const circleKeys = Object.keys(circleObjects);
 
       new_coords = [obj.x1, obj.y1, pointer.x, pointer.y]
-      console.log(obj.id)
 
       //store id in temp before it gets changes in the next increment loop
       temp = obj.id;
@@ -160,13 +142,12 @@ canvas.on('mouse:dblclick', function (e) {
       })
 
       //make new circle with the id of the supposingly next circle
-      console.log(obj.id)
       newCircle = makeCircle(newLine.get('x2'), newLine.get('y2'), newLine, obj, 'black', temp);
       canvas.add(newCircle);
 
       //change coordinates of old circle the circle before the new circle which is 2 index behind
       idToChange = temp-1;
-      console.log(`idToChange${idToChange}`)
+
       if (idToChange === 0){
 
         oldcircle = circleObjects.find(circle => circle.id === (circleObjects.length+1));
@@ -186,50 +167,59 @@ canvas.on('mouse:down', function(e){
   var p = e.target;
   if (e.target) {
     if (p.type == 'line') {
-      console.log(p.id)
+      console.log(`LineID: ${p.id}`)
+      console.log(`Line Coords: (${p.x1},${p.x1})`)
+
+    }else if(p.type == 'circle'){
+      console.log(`circleID: ${p.id}`)
+      console.log(`Circle Coords: (${p.left},${p.top})`)
     }
   }
 })
 
+//update area based on segmentation
+canvas.on('object:modified', function(){
+
+  const objects = canvas.getObjects('line');
+  const lines = []
+  const newCoords = []
+  var max = 0
+  // console.log(objects)
+  for(var index in objects){
+
+    for (const [key, value] of Object.entries(objects[index])) {
+
+      lines[objects[index].get("id")-1] = objects[index]      
+
+    }
+    //console.log(`LineObject: ${Object.entries(objects[key])}`)
+  }
+  for (var index in lines){
+
+      newCoords[index] = [lines[index].get('x1'), lines[index].get('y1')] 
+  }
+  const area = simpsonArea(newCoords);
+  originalArea.set('text',`Area: ${area}`);
+  console.log(area);
+})
 
 function simpsonArea(coordsArray) {
 
   var area = 0;
 
+  //need to wrap it around to use shoelace
+  coordsArray[coordsArray.length] = coordsArray[0];
+
   for (var i = 0; i < coordsArray.length - 1; i++){
-    area = coordsArray[i][0] * coordsArray[i+1][1] - coordsArray[i+1][0] * coords[i][1];
+    area += coordsArray[i][0] * coordsArray[i+1][1] - coordsArray[i+1][0] * coordsArray[i][1];
 
   }
-  return (area/2)
+  return (Math.abs(area/2)).toFixed(4)
 }
 
-// for now only works on line3 (skeleton for the logic i used)
-// line3.on('mousedown', function(e){
+const area = simpsonArea(coords);
+const originalArea = new fabric.Text(`Area: ${area}`, {fontSize: 20 ,left: 100, top: 20});
+canvas.add(originalArea);
 
-//   var pointer = canvas.getPointer(e);
-
-//   //create a new line
-//   new_coords = [line3.x1, line3.y1, pointer.x, pointer.y]
-//   newLine = makeLine(new_coords);
-//   canvas.add(newLine)
-
-//   //shorten old line
-//   line3.set({'x1':pointer.x, 'y1':pointer.y})
-//   canvas.renderAll();
-
-//   //add new circle
-//   newCircle = makeCircle(newLine.get('x2'), newLine.get('y2'), newLine, line3, 'black');
-//   canvas.add(newCircle);
-
-//   //change coordinates of old circle
-//   circle2.line2 = newLine; 
-
-// })
-
-
-canvas.on('object:modified', () => {
-  let objects = canvas.getObjects('line');
-  console.log(objects)
-})
 
 
