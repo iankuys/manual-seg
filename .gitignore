@@ -1,0 +1,16 @@
+###################
+*.jpg
+*.png
+venv/
+.venv
+node_modules/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+

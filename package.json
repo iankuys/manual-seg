@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "fabric": "^5.2.1"
+  }
+}
